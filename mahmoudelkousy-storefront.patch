@@ -1,7 +1,7 @@
 From 535a84cff5f6e9fc344aa98ee43ac6408d7f3016 Mon Sep 17 00:00:00 2001
 From: Cursor Agent <cursoragent@cursor.com>
 Date: Thu, 20 Aug 2026 13:19:14 +0000
-Subject: [PATCH] Add the plant-care landing page at /products/plant
+Subject: [PATCH 1/2] Add the plant-care landing page at /products/plant
 
 Sell the Egyptian houseplant guide for 449 EGP with the same Kashier and Instapay checkout as the Canva pack, and send a product-specific purchase email after payment.
 ---
@@ -30872,6 +30872,941 @@ index 0000000..aac0987
 +    assert.match(email.html, /dir="rtl"/);
 +  });
 +});
+-- 
+2.43.0
+
+
+From d9df1b83e88ca3dfec1d0be3bed00c879ab2bada Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Thu, 20 Aug 2026 13:36:12 +0000
+Subject: [PATCH 2/2] Serve the plant guide at /products/plant and the sales
+ page at /buydoctorplant
+
+Move checkout to /buydoctorplant, proxy the interactive guide through /products/plant, and expand admin analytics with unique-session funnel tracking for opens, scroll, checkout view, and purchases.
+---
+ .env.example                                  |   3 +-
+ README.md                                     |   3 +-
+ next.config.js                                |  12 +-
+ src/app/admin/page.tsx                        |   2 +-
+ src/app/api/admin/analytics/route.ts          |   5 +-
+ src/app/api/orders/route.ts                   |   4 +-
+ src/app/api/track/route.ts                    |  17 ++
+ .../plant => buydoctorplant}/page.tsx         |   7 +-
+ src/app/globals.css                           |  42 +++++
+ src/app/page.tsx                              |   7 +-
+ src/components/AdminAnalytics.tsx             |  68 +++++++-
+ src/components/TrackingBoot.tsx               | 114 ++++++++++---
+ src/lib/analytics.ts                          | 150 +++++++++++++++++-
+ src/lib/config.ts                             |   6 +-
+ src/lib/db.ts                                 |  17 +-
+ src/lib/products.ts                           |   2 +-
+ tests/analytics.test.ts                       |  40 +++++
+ tests/plant-product.test.ts                   |   2 +-
+ 18 files changed, 450 insertions(+), 51 deletions(-)
+ rename src/app/{products/plant => buydoctorplant}/page.tsx (91%)
+
+diff --git a/.env.example b/.env.example
+index 9d36829..6aea0c5 100644
+--- a/.env.example
++++ b/.env.example
+@@ -5,7 +5,8 @@ PRODUCT_CURRENCY=EGP
+ PRODUCT_NAME=+1000 winning conversion ads canva editable templates
+ PRODUCT_DELIVERY_URL=https://drive.google.com/drive/u/0/folders/1YA69JKnLz1cCSa6913KvyuZdksZH-p6O
+ PLANT_PRODUCT_PRICE=449
+-PLANT_DELIVERY_URL=
++PLANT_DELIVERY_URL=https://www.mahmoudelkousy.online/products/plant
++PLANT_APP_ORIGIN=
+ WHATSAPP_NUMBER=201017420379
+ 
+ # Turso (مطلوب على Vercel)
+diff --git a/README.md b/README.md
+index 3985501..676da23 100644
+--- a/README.md
++++ b/README.md
+@@ -3,7 +3,7 @@
+ متجر رقمي لصفحات الهبوط:
+ 
+ - مكتبة +1000 Canva Ads: `/` و `/products/1000`
+-- دليل رعاية النباتات المنزلية: `/products/plant` بسعر **449 جنيه**
++- دليل رعاية النباتات: الشراء `/buydoctorplant` — الدليل `/products/plant`
+ 
+ الدفع في الاتنين واحد:
+ 
+@@ -35,6 +35,7 @@ npm run dev
+ | `PRODUCT_DELIVERY_URL` | لينك Google Drive لمكتبة الـ 1000 بعد الدفع |
+ | `PLANT_PRODUCT_PRICE` | سعر دليل النباتات (الافتراضي 449) |
+ | `PLANT_DELIVERY_URL` | لينك دخول دليل النباتات بعد الدفع |
++| `PLANT_APP_ORIGIN` | أصل نشر الدليل عشان `/products/plant` تتوجه له |
+ | `ADMIN_PASSWORD` | دخول لوحة الأدمن |
+ | `SESSION_SECRET` | مفتاح توقيع جلسة الأدمن |
+ | `KASHIER_MID` / `KASHIER_API_KEY` / `KASHIER_MODE` | ربط كاشير (`live` أو `test`) |
+diff --git a/next.config.js b/next.config.js
+index 658404a..9770b6b 100644
+--- a/next.config.js
++++ b/next.config.js
+@@ -1,4 +1,14 @@
+ /** @type {import('next').NextConfig} */
+-const nextConfig = {};
++const plantOrigin = (process.env.PLANT_APP_ORIGIN || "").replace(/\/$/, "");
++
++const nextConfig = {
++  async rewrites() {
++    if (!plantOrigin) return [];
++    return [
++      { source: "/products/plant", destination: `${plantOrigin}/products/plant` },
++      { source: "/products/plant/:path*", destination: `${plantOrigin}/products/plant/:path*` },
++    ];
++  },
++};
+ 
+ module.exports = nextConfig;
+diff --git a/src/app/admin/page.tsx b/src/app/admin/page.tsx
+index 2de4a88..a43612c 100644
+--- a/src/app/admin/page.tsx
++++ b/src/app/admin/page.tsx
+@@ -407,7 +407,7 @@ export default function AdminPage() {
+               </code>
+               ودليل النباتات:
+               <code className="settings-code" dir="ltr">
+-                {"https://www.mahmoudelkousy.online/products/plant?utm_source=facebook&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}&utm_term={{adset.name}}"}
++                {"https://www.mahmoudelkousy.online/buydoctorplant?utm_source=facebook&utm_medium=paid&utm_campaign={{campaign.name}}&utm_content={{ad.name}}&utm_term={{adset.name}}"}
+               </code>
+             </p>
+             {!usesRemoteDb ? (
+diff --git a/src/app/api/admin/analytics/route.ts b/src/app/api/admin/analytics/route.ts
+index f67170b..1ff5a8b 100644
+--- a/src/app/api/admin/analytics/route.ts
++++ b/src/app/api/admin/analytics/route.ts
+@@ -1,6 +1,6 @@
+ import { NextRequest, NextResponse } from "next/server";
+ import { isAdminRequest } from "@/lib/auth";
+-import { getAnalyticsReport, parseAnalyticsPeriod } from "@/lib/analytics";
++import { getAnalyticsReport, parseAnalyticsPeriod, parseProductFilter } from "@/lib/analytics";
+ import { usesRemoteDb } from "@/lib/db";
+ 
+ export const runtime = "nodejs";
+@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
+     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+   }
+   const period = parseAnalyticsPeriod(req.nextUrl.searchParams.get("period"));
+-  const report = await getAnalyticsReport(period);
++  const product = parseProductFilter(req.nextUrl.searchParams.get("product"));
++  const report = await getAnalyticsReport(period, new Date(), product);
+   return NextResponse.json({ ok: true, report, usesRemoteDb: usesRemoteDb() });
+ }
+diff --git a/src/app/api/orders/route.ts b/src/app/api/orders/route.ts
+index 8b07d0a..32c80a4 100644
+--- a/src/app/api/orders/route.ts
++++ b/src/app/api/orders/route.ts
+@@ -169,12 +169,13 @@ export async function POST(req: NextRequest) {
+ 
+   await notifyOrder("lead", order);
+ 
+-  await insertEvent({ id: leadEventId, session_id: sessionId, order_id: orderId, name: "Lead" });
++  await insertEvent({ id: leadEventId, session_id: sessionId, order_id: orderId, name: "Lead", product_slug: product.slug });
+   await insertEvent({
+     id: checkoutEventId,
+     session_id: sessionId,
+     order_id: orderId,
+     name: "InitiateCheckout",
++    product_slug: product.slug,
+   });
+ 
+   const user = {
+@@ -209,6 +210,7 @@ export async function POST(req: NextRequest) {
+     session_id: sessionId,
+     order_id: orderId,
+     name: "AddPaymentInfo",
++    product_slug: product.slug,
+   });
+   await sendCapiEvent({
+     eventName: "AddPaymentInfo",
+diff --git a/src/app/api/track/route.ts b/src/app/api/track/route.ts
+index 0f670c4..c97b18f 100644
+--- a/src/app/api/track/route.ts
++++ b/src/app/api/track/route.ts
+@@ -11,8 +11,10 @@ export async function POST(req: NextRequest) {
+   const sessionId = body.sessionId || getOrCreateSessionId();
+   const eventName = body.eventName || "PageView";
+   const eventId = body.eventId || crypto.randomUUID();
++  const productSlug = body.productSlug === "plant" ? "plant" : "1000";
+   const ip = clientIp(req);
+   const ua = userAgent(req);
++  const funnelOnly = eventName.startsWith("Scroll") || eventName === "CheckoutView";
+ 
+   if (eventName === "PageView") {
+     await insertVisit({
+@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
+       utm_term: body.utm_term,
+       fbclid: body.fbclid,
+       referrer: body.referrer,
++      product_slug: productSlug,
+     });
+   }
+ 
+@@ -37,6 +40,7 @@ export async function POST(req: NextRequest) {
+     session_id: sessionId,
+     order_id: body.orderId || null,
+     name: eventName,
++    product_slug: productSlug,
+   });
+ 
+   if (eventName === "Purchase") {
+@@ -55,6 +59,17 @@ export async function POST(req: NextRequest) {
+     return skipped;
+   }
+ 
++  if (funnelOnly) {
++    const res = NextResponse.json({ ok: true, eventId, sessionId });
++    res.cookies.set("sid", sessionId, {
++      httpOnly: true,
++      sameSite: "lax",
++      path: "/",
++      maxAge: 60 * 60 * 24 * 90,
++    });
++    return res;
++  }
++
+   await sendCapiEvent({
+     eventName,
+     eventId,
+@@ -76,6 +91,8 @@ export async function POST(req: NextRequest) {
+             value: body.value,
+             currency: body.currency,
+             orderId: body.orderId,
++            contentName: body.productSlug === "plant" ? "Plant Care Guide" : undefined,
++            contentIds: [productSlug],
+           },
+   });
+ 
+diff --git a/src/app/products/plant/page.tsx b/src/app/buydoctorplant/page.tsx
+similarity index 91%
+rename from src/app/products/plant/page.tsx
+rename to src/app/buydoctorplant/page.tsx
+index f9d6bbf..49a5c4c 100644
+--- a/src/app/products/plant/page.tsx
++++ b/src/app/buydoctorplant/page.tsx
+@@ -25,7 +25,12 @@ export default async function PlantProductPage() {
+   const plant = getCatalogProduct("plant");
+   return (
+     <>
+-      <TrackingBoot />
++      <TrackingBoot
++        productSlug={plant.slug}
++        price={plant.price}
++        contentName={plant.pixelName}
++        trackFunnel
++      />
+       <PlantLandingPage whatsapp={cfg.whatsapp} price={plant.price} />
+       <CheckoutForm
+         instapayNumber={cfg.instapay.number}
+diff --git a/src/app/globals.css b/src/app/globals.css
+index be5b682..1ae86b2 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -556,10 +556,52 @@ a { color: inherit; }
+   font-size: 11px;
+ }
+ 
++.funnel-grid {
++  display: grid;
++  grid-template-columns: repeat(5, 1fr);
++  gap: 10px;
++  margin-top: 16px;
++}
++
++.funnel-step {
++  position: relative;
++  background: #0F172A;
++  color: #fff;
++  border-radius: 16px;
++  padding: 16px 14px 14px;
++}
++
++.funnel-step b {
++  display: block;
++  font-size: 28px;
++  line-height: 1.1;
++}
++
++.funnel-step span {
++  display: block;
++  margin-top: 8px;
++  font-weight: 800;
++}
++
++.funnel-step small {
++  display: block;
++  margin-top: 4px;
++  color: #94A3B8;
++}
++
++.funnel-step em {
++  position: absolute;
++  left: -8px;
++  top: 22px;
++  font-style: normal;
++  color: #54C7FF;
++}
++
+ @media (max-width: 900px) {
+   .stats { grid-template-columns: 1fr 1fr; }
+   .pay-grid { grid-template-columns: 1fr; }
+   .admin-table { display: block; overflow-x: auto; }
+   .settings-grid { grid-template-columns: 1fr; }
+   .analytics-hero { grid-template-columns: 1fr 1fr; }
++  .funnel-grid { grid-template-columns: 1fr 1fr; }
+ }
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index d8e7d2d..ecff9d4 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -10,7 +10,12 @@ export default async function HomePage() {
+   const cfg = await getPaymentConfig();
+   return (
+     <>
+-      <TrackingBoot />
++      <TrackingBoot
++        productSlug={PRODUCT.slug}
++        price={PRODUCT.price}
++        contentName={PRODUCT.pixelName}
++        trackFunnel
++      />
+       <LandingPage whatsapp={cfg.whatsapp} />
+       <CheckoutForm
+         instapayNumber={cfg.instapay.number}
+diff --git a/src/components/AdminAnalytics.tsx b/src/components/AdminAnalytics.tsx
+index d47d3a8..9646fd5 100644
+--- a/src/components/AdminAnalytics.tsx
++++ b/src/components/AdminAnalytics.tsx
+@@ -1,7 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useState } from "react";
+-import type { AnalyticsPeriod, AnalyticsReport } from "@/lib/analytics";
++import type { AnalyticsPeriod, AnalyticsProductFilter, AnalyticsReport } from "@/lib/analytics";
++
++const PRODUCTS: Array<{ id: AnalyticsProductFilter; label: string }> = [
++  { id: "all", label: "كل المنتجات" },
++  { id: "plant", label: "دليل النباتات" },
++  { id: "1000", label: "مكتبة +1000" },
++];
+ 
+ const PERIODS: Array<{ id: AnalyticsPeriod; label: string }> = [
+   { id: "day", label: "اليوم" },
+@@ -27,6 +33,7 @@ function changeClass(value: number) {
+ 
+ export default function AdminAnalytics() {
+   const [period, setPeriod] = useState<AnalyticsPeriod>("week");
++  const [product, setProduct] = useState<AnalyticsProductFilter>("all");
+   const [report, setReport] = useState<AnalyticsReport | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState("");
+@@ -35,7 +42,7 @@ export default function AdminAnalytics() {
+   async function load(nextPeriod = period) {
+     setLoading(true);
+     setError("");
+-    const res = await fetch(`/api/admin/analytics?period=${nextPeriod}`);
++    const res = await fetch(`/api/admin/analytics?period=${nextPeriod}&product=${product}`);
+     const json = await res.json().catch(() => ({}));
+     setLoading(false);
+     if (!res.ok || !json.ok) {
+@@ -48,7 +55,7 @@ export default function AdminAnalytics() {
+ 
+   useEffect(() => {
+     load(period);
+-  }, [period]);
++  }, [period, product]);
+ 
+   const maxIncome = Math.max(1, ...(report?.series.map((point) => point.income) || [1]));
+   const current = report?.current;
+@@ -58,8 +65,20 @@ export default function AdminAnalytics() {
+       <div className="settings-card">
+         <h2>تحليل المبيعات</h2>
+         <p>
+-          شوف كام طلب اتقفل، كام لسه واقف على الدفع، وإجمالي الدخل. الأرقام بتتوقيت مصر، ومقارنة بالفترة اللي قبلها.
++          شوف مين فتح الصفحة، مين عمل سكرول، مين وصل للدفع، مين اشترى، والدخل. الأرقام بتتوقيت مصر، ومقارنة بالفترة اللي قبلها.
+         </p>
++        <div className="analytics-periods">
++          {PRODUCTS.map((item) => (
++            <button
++              key={item.id}
++              type="button"
++              className={product === item.id ? "active" : ""}
++              onClick={() => setProduct(item.id)}
++            >
++              {item.label}
++            </button>
++          ))}
++        </div>
+         <div className="analytics-periods">
+           {PERIODS.map((item) => (
+             <button
+@@ -89,6 +108,47 @@ export default function AdminAnalytics() {
+         {report ? <p className="analytics-insight">{report.insight}</p> : null}
+       </div>
+ 
++      {report?.funnel ? (
++        <div className="settings-card">
++          <h2>فنل الصفحة</h2>
++          <p>كام واحد فتح، عمل سكرول، نزل لمكان الدفع، ملأ البيانات، واشترى.</p>
++          <div className="funnel-grid">
++            {[
++              { label: "فتح الصفحة", value: report.funnel.opens, hint: `${report.funnel.uniqueVisitors} زائر مختلف` },
++              { label: "سكرول 50%", value: report.funnel.scroll50, hint: `${report.funnel.openToScroll}% من الفتح` },
++              { label: "وصل للدفع", value: report.funnel.reachedPay, hint: `${report.funnel.scrollToPay}% بعد السكرول` },
++              { label: "ملأ البيانات", value: report.funnel.leads, hint: `${report.funnel.payToLead}% من اللي وصلوا للدفع` },
++              { label: "اشترى", value: report.funnel.purchased, hint: `${report.funnel.openToPurchase}% من الفتح` },
++            ].map((step, index, list) => (
++              <div className="funnel-step" key={step.label}>
++                <b>{step.value}</b>
++                <span>{step.label}</span>
++                <small>{step.hint}</small>
++                {index < list.length - 1 ? <em>←</em> : null}
++              </div>
++            ))}
++          </div>
++          <div className="stats" style={{ marginTop: 18 }}>
++            <div className="stat">
++              سكرول 25%
++              <b>{report.funnel.scroll25}</b>
++            </div>
++            <div className="stat">
++              سكرول 75%
++              <b>{report.funnel.scroll75}</b>
++            </div>
++            <div className="stat">
++              سكرول كامل
++              <b>{report.funnel.scroll100}</b>
++            </div>
++            <div className="stat">
++              تحويل الشراء من الطلب
++              <b>{report.funnel.leadToPurchase}%</b>
++            </div>
++          </div>
++        </div>
++      ) : null}
++
+       <div className="stats analytics-hero">
+         <div className="stat">
+           توتال الدخل
+diff --git a/src/components/TrackingBoot.tsx b/src/components/TrackingBoot.tsx
+index 4240f5f..5fd13c6 100644
+--- a/src/components/TrackingBoot.tsx
++++ b/src/components/TrackingBoot.tsx
+@@ -91,36 +91,106 @@ export function firePixel(event: string, extra: Record<string, unknown> = {}, ev
+   }
+ }
+ 
+-export function TrackingBoot() {
++function postEvent(body: Record<string, unknown>) {
++  fetch("/api/track", {
++    method: "POST",
++    headers: { "Content-Type": "application/json" },
++    keepalive: true,
++    body: JSON.stringify(body),
++  }).catch(() => {});
++}
++
++function onceKey(productSlug: string, name: string) {
++  return `elkousy-funnel:${productSlug}:${name}`;
++}
++
++function markOnce(productSlug: string, name: string) {
++  try {
++    const key = onceKey(productSlug, name);
++    if (sessionStorage.getItem(key)) return false;
++    sessionStorage.setItem(key, "1");
++    return true;
++  } catch {
++    return true;
++  }
++}
++
++export function TrackingBoot({
++  productSlug = "1000",
++  price = 235,
++  contentName,
++  trackFunnel = false,
++}: {
++  productSlug?: string;
++  price?: number;
++  contentName?: string;
++  trackFunnel?: boolean;
++}) {
+   useEffect(() => {
+     const attr = captureAttribution();
+-    const eventId = crypto.randomUUID();
+     const cookies = getMetaCookies();
+-    firePixel("PageView", {}, eventId);
+-    const viewId = crypto.randomUUID();
+-    firePixel("ViewContent", { content_name: document.title, content_ids: ["1000"], value: 235, currency: "EGP" }, viewId);
+     const payload = {
+       ...cookies,
+       ...attr,
+       referrer: document.referrer,
+       eventSourceUrl: window.location.href,
++      productSlug,
++      value: price,
++      currency: "EGP",
+     };
+-    fetch("/api/track", {
+-      method: "POST",
+-      headers: { "Content-Type": "application/json" },
+-      body: JSON.stringify({ eventName: "PageView", eventId, ...payload }),
+-    }).catch(() => {});
+-    fetch("/api/track", {
+-      method: "POST",
+-      headers: { "Content-Type": "application/json" },
+-      body: JSON.stringify({
+-        eventName: "ViewContent",
+-        eventId: viewId,
+-        value: 235,
+-        currency: "EGP",
+-        ...payload,
+-      }),
+-    }).catch(() => {});
+-  }, []);
++
++    const pageEventId = crypto.randomUUID();
++    firePixel("PageView", {}, pageEventId);
++    postEvent({ eventName: "PageView", eventId: pageEventId, ...payload });
++
++    const viewId = crypto.randomUUID();
++    firePixel(
++      "ViewContent",
++      { content_name: contentName || document.title, content_ids: [productSlug], value: price, currency: "EGP" },
++      viewId
++    );
++    postEvent({ eventName: "ViewContent", eventId: viewId, ...payload });
++
++    if (!trackFunnel) return;
++
++    const sendNamed = (eventName: string) => {
++      if (!markOnce(productSlug, eventName)) return;
++      postEvent({ eventName, eventId: crypto.randomUUID(), ...payload });
++    };
++
++    const onScroll = () => {
++      const doc = document.documentElement;
++      const max = doc.scrollHeight - doc.clientHeight;
++      const pct = max <= 0 ? 100 : Math.round((window.scrollY / max) * 100);
++      if (pct >= 25) sendNamed("Scroll25");
++      if (pct >= 50) sendNamed("Scroll50");
++      if (pct >= 75) sendNamed("Scroll75");
++      if (pct >= 90) sendNamed("Scroll100");
++    };
++
++    onScroll();
++    window.addEventListener("scroll", onScroll, { passive: true });
++
++    const pay = document.getElementById("order-form");
++    let observer: IntersectionObserver | null = null;
++    if (pay && "IntersectionObserver" in window) {
++      observer = new IntersectionObserver(
++        (entries) => {
++          if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.25)) {
++            sendNamed("CheckoutView");
++            observer?.disconnect();
++          }
++        },
++        { threshold: [0.25, 0.5] }
++      );
++      observer.observe(pay);
++    }
++
++    return () => {
++      window.removeEventListener("scroll", onScroll);
++      observer?.disconnect();
++    };
++  }, [productSlug, price, contentName, trackFunnel]);
++
+   return null;
+ }
+diff --git a/src/lib/analytics.ts b/src/lib/analytics.ts
+index 838edec..ed6c440 100644
+--- a/src/lib/analytics.ts
++++ b/src/lib/analytics.ts
+@@ -11,6 +11,7 @@ export type AnalyticsOrder = {
+   amount: number;
+   created_at: string;
+   paid_at?: string | null;
++  product_slug?: string | null;
+   utm_campaign?: string | null;
+   utm_content?: string | null;
+   utm_term?: string | null;
+@@ -21,6 +22,33 @@ export type AnalyticsOrder = {
+ export type AnalyticsVisit = {
+   session_id: string;
+   created_at: string;
++  product_slug?: string | null;
++};
++
++export type AnalyticsEvent = {
++  session_id: string;
++  name: string;
++  created_at: string;
++  product_slug?: string | null;
++};
++
++export type AnalyticsProductFilter = "all" | "1000" | "plant";
++
++export type AnalyticsFunnel = {
++  opens: number;
++  uniqueVisitors: number;
++  scroll25: number;
++  scroll50: number;
++  scroll75: number;
++  scroll100: number;
++  reachedPay: number;
++  leads: number;
++  purchased: number;
++  openToScroll: number;
++  scrollToPay: number;
++  payToLead: number;
++  leadToPurchase: number;
++  openToPurchase: number;
+ };
+ 
+ export type AnalyticsTotals = {
+@@ -90,6 +118,7 @@ export type AnalyticsReport = {
+   insight: string;
+   series: AnalyticsPoint[];
+   sources: AnalyticsSource[];
++  funnel: AnalyticsFunnel;
+ };
+ 
+ export const ANALYTICS_TIMEZONE = "Africa/Cairo";
+@@ -179,6 +208,82 @@ export function parseAnalyticsPeriod(value: string | null | undefined): Analytic
+   return "week";
+ }
+ 
++export function parseProductFilter(value: string | null | undefined): AnalyticsProductFilter {
++  if (value === "plant" || value === "1000") return value;
++  return "all";
++}
++
++function matchesProduct<T extends { product_slug?: string | null }>(
++  row: T,
++  product: AnalyticsProductFilter
++) {
++  if (product === "all") return true;
++  return (row.product_slug || "1000") === product;
++}
++
++export function emptyFunnel(): AnalyticsFunnel {
++  return {
++    opens: 0,
++    uniqueVisitors: 0,
++    scroll25: 0,
++    scroll50: 0,
++    scroll75: 0,
++    scroll100: 0,
++    reachedPay: 0,
++    leads: 0,
++    purchased: 0,
++    openToScroll: 0,
++    scrollToPay: 0,
++    payToLead: 0,
++    leadToPurchase: 0,
++    openToPurchase: 0,
++  };
++}
++
++function uniqueSessions(events: AnalyticsEvent[], name: string, from: string, to: string) {
++  return new Set(
++    events.filter((event) => event.name === name && inRange(event.created_at, from, to)).map((event) => event.session_id)
++  ).size;
++}
++
++export function buildFunnel(input: {
++  visits: AnalyticsVisit[];
++  events: AnalyticsEvent[];
++  orders: AnalyticsOrder[];
++  from: string;
++  to: string;
++}): AnalyticsFunnel {
++  const from = input.from;
++  const to = input.to;
++  const visitsIn = input.visits.filter((visit) => inRange(visit.created_at, from, to));
++  const uniqueVisitors = new Set(visitsIn.map((visit) => visit.session_id)).size;
++  const opens = uniqueVisitors || uniqueSessions(input.events, "PageView", from, to);
++  const scroll25 = uniqueSessions(input.events, "Scroll25", from, to);
++  const scroll50 = uniqueSessions(input.events, "Scroll50", from, to);
++  const scroll75 = uniqueSessions(input.events, "Scroll75", from, to);
++  const scroll100 = uniqueSessions(input.events, "Scroll100", from, to);
++  const reachedPay = uniqueSessions(input.events, "CheckoutView", from, to);
++  const leads = input.orders.filter((order) => inRange(order.created_at, from, to)).length;
++  const purchased = input.orders.filter((order) => order.status === "paid" && inRange(order.paid_at, from, to)).length;
++  const pct = (num: number, den: number) => (den ? round1((num / den) * 100) : 0);
++  return {
++    opens,
++    uniqueVisitors,
++    scroll25,
++    scroll50,
++    scroll75,
++    scroll100,
++    reachedPay,
++    leads,
++    purchased,
++    openToScroll: pct(scroll50, opens),
++    scrollToPay: pct(reachedPay, scroll50 || opens),
++    payToLead: pct(leads, reachedPay || opens),
++    leadToPurchase: pct(purchased, leads),
++    openToPurchase: pct(purchased, opens),
++  };
++}
++
+ export function periodRange(period: AnalyticsPeriod, now = new Date()): AnalyticsRange {
+   const days = PERIOD_DAYS[period];
+   const today = cairoYmd(now);
+@@ -356,12 +461,19 @@ export function buildAnalyticsReport(input: {
+   now?: Date;
+   orders: AnalyticsOrder[];
+   visits: AnalyticsVisit[];
++  events?: AnalyticsEvent[];
++  product?: AnalyticsProductFilter;
+   openPipeline?: number;
+ }): AnalyticsReport {
++  const product = input.product || "all";
++  const orders = input.orders.filter((row) => matchesProduct(row, product));
++  const visits = input.visits.filter((row) => matchesProduct(row, product));
++  const events = (input.events || []).filter((row) => matchesProduct(row, product));
+   const range = periodRange(input.period, input.now);
+-  const current = summarizeWindow(input.orders, input.visits, range.from, range.to);
+-  const previous = summarizeWindow(input.orders, input.visits, range.previousFrom, range.previousTo);
++  const current = summarizeWindow(orders, visits, range.from, range.to);
++  const previous = summarizeWindow(orders, visits, range.previousFrom, range.previousTo);
+   const openPipeline = input.openPipeline ?? 0;
++  const funnel = buildFunnel({ visits, events, orders, from: range.from, to: range.to });
+   return {
+     period: input.period,
+     timezone: ANALYTICS_TIMEZONE,
+@@ -377,8 +489,9 @@ export function buildAnalyticsReport(input: {
+     },
+     openPipeline,
+     insight: insightText(current, openPipeline),
+-    series: buildSeries(input.orders, input.visits, range.fromYmd, range.toYmdExclusive),
+-    sources: summarizeSources(input.orders, range.from, range.to),
++    series: buildSeries(orders, visits, range.fromYmd, range.toYmdExclusive),
++    sources: summarizeSources(orders, range.from, range.to),
++    funnel,
+   };
+ }
+ 
+@@ -391,6 +504,7 @@ function asOrder(row: Record<string, unknown>): AnalyticsOrder {
+     amount: Number(row.amount || 0),
+     created_at: String(row.created_at),
+     paid_at: row.paid_at ? String(row.paid_at) : null,
++    product_slug: row.product_slug ? String(row.product_slug) : "1000",
+     utm_campaign: row.utm_campaign ? String(row.utm_campaign) : null,
+     utm_content: row.utm_content ? String(row.utm_content) : null,
+     utm_term: row.utm_term ? String(row.utm_term) : null,
+@@ -403,22 +517,40 @@ function asVisit(row: Record<string, unknown>): AnalyticsVisit {
+   return {
+     session_id: String(row.session_id || ""),
+     created_at: String(row.created_at),
++    product_slug: row.product_slug ? String(row.product_slug) : "1000",
+   };
+ }
+ 
+-export async function getAnalyticsReport(period: AnalyticsPeriod, now = new Date()) {
++function asEvent(row: Record<string, unknown>): AnalyticsEvent {
++  return {
++    session_id: String(row.session_id || ""),
++    name: String(row.name || ""),
++    created_at: String(row.created_at),
++    product_slug: row.product_slug ? String(row.product_slug) : "1000",
++  };
++}
++
++export async function getAnalyticsReport(
++  period: AnalyticsPeriod,
++  now = new Date(),
++  product: AnalyticsProductFilter = "all"
++) {
+   const range = periodRange(period, now);
+   const database = await getDb();
+-  const [ordersResult, visitsResult, pipelineResult] = await Promise.all([
++  const [ordersResult, visitsResult, eventsResult, pipelineResult] = await Promise.all([
+     database.execute({
+-      sql: `SELECT id, session_id, status, payment_method, amount, created_at, paid_at,
++      sql: `SELECT id, session_id, status, payment_method, amount, created_at, paid_at, product_slug,
+                    utm_campaign, utm_content, utm_term, fbclid, fbc
+             FROM orders
+             WHERE created_at >= ? OR COALESCE(paid_at, '') >= ?`,
+       args: [range.previousFrom, range.previousFrom],
+     }),
+     database.execute({
+-      sql: `SELECT session_id, created_at FROM visits WHERE created_at >= ?`,
++      sql: `SELECT session_id, created_at, product_slug FROM visits WHERE created_at >= ?`,
++      args: [range.previousFrom],
++    }),
++    database.execute({
++      sql: `SELECT session_id, name, created_at, product_slug FROM events WHERE created_at >= ?`,
+       args: [range.previousFrom],
+     }),
+     database.execute({
+@@ -430,8 +562,10 @@ export async function getAnalyticsReport(period: AnalyticsPeriod, now = new Date
+   return buildAnalyticsReport({
+     period,
+     now,
++    product,
+     orders: ordersResult.rows.map((row) => asOrder(row as Record<string, unknown>)),
+     visits: visitsResult.rows.map((row) => asVisit(row as Record<string, unknown>)),
++    events: eventsResult.rows.map((row) => asEvent(row as Record<string, unknown>)),
+     openPipeline: Number(pipelineResult.rows[0]?.c || 0),
+   });
+ }
+diff --git a/src/lib/config.ts b/src/lib/config.ts
+index e80533d..fc80873 100644
+--- a/src/lib/config.ts
++++ b/src/lib/config.ts
+@@ -64,7 +64,11 @@ export function mergePaymentConfig(
+       stored.product_delivery_url,
+       DEFAULT_DELIVERY_URL
+     ),
+-    plantDeliveryUrl: firstNonEmpty(env.PLANT_DELIVERY_URL, stored.plant_delivery_url),
++    plantDeliveryUrl: firstNonEmpty(
++      env.PLANT_DELIVERY_URL,
++      stored.plant_delivery_url,
++      "https://www.mahmoudelkousy.online/products/plant"
++    ),
+     whatsapp: firstNonEmpty(env.WHATSAPP_NUMBER, stored.whatsapp_number, "201017420379").replace(
+       /\D/g,
+       ""
+diff --git a/src/lib/db.ts b/src/lib/db.ts
+index 4d2cb8d..e4795a9 100644
+--- a/src/lib/db.ts
++++ b/src/lib/db.ts
+@@ -162,6 +162,10 @@ async function migrate(database: Client) {
+   await ensureColumn(database, "orders", "fbclid", "TEXT");
+   await ensureColumn(database, "orders", "email_sent_at", "TEXT");
+   await ensureColumn(database, "orders", "product_slug", "TEXT");
++  await ensureColumn(database, "visits", "product_slug", "TEXT");
++  await ensureColumn(database, "events", "product_slug", "TEXT");
++  await database.execute(`CREATE INDEX IF NOT EXISTS idx_events_session ON events(session_id)`);
++  await database.execute(`CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at)`);
+ }
+ 
+ export function usesRemoteDb() {
+@@ -225,11 +229,12 @@ export async function insertVisit(visit: {
+   utm_term?: string | null;
+   fbclid?: string | null;
+   referrer?: string | null;
++  product_slug?: string | null;
+ }) {
+   const database = await getDb();
+   await database.execute({
+-    sql: `INSERT INTO visits (id, session_id, ip, user_agent, fbp, fbc, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, referrer, created_at)
+-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
++    sql: `INSERT INTO visits (id, session_id, ip, user_agent, fbp, fbc, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, referrer, created_at, product_slug)
++          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     args: [
+       visit.id,
+       visit.session_id,
+@@ -245,6 +250,7 @@ export async function insertVisit(visit: {
+       visit.fbclid || null,
+       visit.referrer || null,
+       nowIso(),
++      visit.product_slug || "1000",
+     ],
+   });
+ }
+@@ -422,12 +428,13 @@ export async function insertEvent(event: {
+   session_id?: string | null;
+   order_id?: string | null;
+   name: string;
++  product_slug?: string | null;
+ }) {
+   const database = await getDb();
+   await database.execute({
+-    sql: `INSERT INTO events (id, session_id, order_id, name, created_at)
+-          VALUES (?, ?, ?, ?, ?)`,
+-    args: [event.id, event.session_id || null, event.order_id || null, event.name, nowIso()],
++    sql: `INSERT INTO events (id, session_id, order_id, name, created_at, product_slug)
++          VALUES (?, ?, ?, ?, ?, ?)`,
++    args: [event.id, event.session_id || null, event.order_id || null, event.name, nowIso(), event.product_slug || null],
+   });
+ }
+ 
+diff --git a/src/lib/products.ts b/src/lib/products.ts
+index 2bf7fa8..1e5aa4b 100644
+--- a/src/lib/products.ts
++++ b/src/lib/products.ts
+@@ -39,7 +39,7 @@ export function getCatalogProduct(
+       kashierDescription: "دليل إنقاذ ورعاية النباتات المنزلية",
+       checkoutTitle: "دليل إنقاذ ورعاية النباتات المنزلية",
+       whatsappMessage: "أهلاً، حابب أعرف تفاصيل أكتر عن دليل رعاية النباتات المنزلية",
+-      path: "/products/plant",
++      path: "/buydoctorplant",
+       thankYouCta: "افتح الدليل دلوقتي",
+       thankYouBody: "شكراً {name}. الدليل وهيوصلك على الإيميل، وتقدر تفتحه من الرابط تحت.",
+       pendingBody: "استلمنا سكرين شوت إنستاباي. أول ما نتأكد من التحويل هنبعتلك لينك الدليل على الإيميل.",
+diff --git a/tests/analytics.test.ts b/tests/analytics.test.ts
+index eca22d6..ff21d53 100644
+--- a/tests/analytics.test.ts
++++ b/tests/analytics.test.ts
+@@ -109,6 +109,46 @@ describe("admin analytics periods", () => {
+     assert.match(report.insight, /اتقفل 2 طلب/);
+     assert.match(report.insight, /470/);
+     assert.equal(report.sources.length >= 1, true);
++    assert.equal(report.funnel.opens, 2);
++    assert.equal(report.funnel.purchased, 2);
++  });
++
++  it("counts landing funnel unique sessions for scroll and checkout", () => {
++    const range = periodRange("week", now);
++    const inCurrent = new Date(Date.parse(range.from) + 2 * 60 * 60 * 1000).toISOString();
++    const report = buildAnalyticsReport({
++      period: "week",
++      now,
++      product: "plant",
++      visits: [
++        { session_id: "a", created_at: inCurrent, product_slug: "plant" },
++        { session_id: "b", created_at: inCurrent, product_slug: "plant" },
++        { session_id: "c", created_at: inCurrent, product_slug: "1000" },
++      ],
++      events: [
++        { session_id: "a", name: "Scroll50", created_at: inCurrent, product_slug: "plant" },
++        { session_id: "a", name: "CheckoutView", created_at: inCurrent, product_slug: "plant" },
++        { session_id: "b", name: "Scroll50", created_at: inCurrent, product_slug: "plant" },
++      ],
++      orders: [
++        {
++          id: "p1",
++          status: "paid",
++          payment_method: "kashier",
++          amount: 449,
++          created_at: inCurrent,
++          paid_at: inCurrent,
++          product_slug: "plant",
++        },
++      ],
++    });
++    assert.equal(report.funnel.opens, 2);
++    assert.equal(report.funnel.scroll50, 2);
++    assert.equal(report.funnel.reachedPay, 1);
++    assert.equal(report.funnel.leads, 1);
++    assert.equal(report.funnel.purchased, 1);
++    assert.equal(report.current.closed, 1);
++    assert.equal(report.current.income, 449);
+   });
+ 
+   it("treats a jump from zero as 100 percent", () => {
+diff --git a/tests/plant-product.test.ts b/tests/plant-product.test.ts
+index aac0987..2522052 100644
+--- a/tests/plant-product.test.ts
++++ b/tests/plant-product.test.ts
+@@ -9,7 +9,7 @@ describe("plant catalog product", () => {
+     assert.equal(plant.slug, "plant");
+     assert.equal(plant.price, 449);
+     assert.equal(plant.currency, "EGP");
+-    assert.equal(plant.path, "/products/plant");
++    assert.equal(plant.path, "/buydoctorplant");
+     assert.match(plant.arabicName, /النباتات/);
+   });
+ 
 -- 
 2.43.0
 

@@ -52,7 +52,7 @@ export function SiteHeader() {
               </Link>
             );
           })}
-          <form action="/search" className="ms-2">
+          <form action="/products/plant/search" className="ms-2">
             <label htmlFor="header-search" className="sr-only">
               بحث
             </label>
@@ -84,7 +84,7 @@ export function SiteHeader() {
           aria-label="قائمة الجوال"
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-2">
-            <form action="/search">
+            <form action="/products/plant/search">
               <label htmlFor="mobile-search" className="sr-only">
                 بحث
               </label>

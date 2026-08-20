@@ -1,18 +1,18 @@
-# صفحة هبوط دليل النباتات على mahmoudelkousy.online
+# صفحة هبوط ودليل النباتات على mahmoudelkousy.online
 
-الشغل ده متعمل على ريبو المتجر `mahmoud3061993/1000` (الموقع الحالي). الوكيل مالوش صلاحية push هناك، فالتعديل محفوظ كـ patch يتطبق على الريبو ده:
+- الدليل التفاعلي: `https://www.mahmoudelkousy.online/products/plant`
+- صفحة الشراء: `https://www.mahmoudelkousy.online/buydoctorplant`
+- الأدمن: `https://www.mahmoudelkousy.online/admin`
+
+التعديل الأساسي على ريبو المتجر `mahmoud3061993/1000`. طبّق الباتش:
 
 ```bash
 cd 1000
 git am mahmoudelkousy-storefront.patch
-git push
 ```
 
-بعد الدمج والنشر:
+بعدها في Vercel Environment Variables:
 
-- صفحة الهبوط: https://www.mahmoudelkousy.online/products/plant
-- السعر: 449 جنيه
-- الدفع: كاشير (فيزا/محفظة) + إنستاباي زي منتج الـ 1000
-- بعد تأكيد الدفع: إيميل بتفاصيل الدليل ولينك الدخول
-
-في لوحة الأدمن حط **لينك دليل النباتات بعد الدفع** (`PLANT_DELIVERY_URL`) على رابط الموقع التفاعلي بعد ما يننشر.
+- `PLANT_APP_ORIGIN` = رابط نشر دليل النباتات (المشروع ده) عشان `/products/plant` يتوجّه للدليل
+- `PLANT_DELIVERY_URL` = `https://www.mahmoudelkousy.online/products/plant`
+- `PLANT_PRODUCT_PRICE` = `449`

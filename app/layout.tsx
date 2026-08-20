@@ -11,6 +11,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.mahmoudelkousy.online"),
   title: {
     default: "دليل إنقاذ ورعاية النباتات المنزلية",
     template: "%s | دليل الإنقاذ",
