@@ -95,7 +95,7 @@ export function SoilTool() {
 
   return (
     <WizardShell title="خلطة التربة" step={2} total={2} onBack={() => setMode("pick")}>
-          <h2 className="mb-3 text-xl font-bold text-leaf-dark">إيه الموجود عندك من المشتن؟</h2>
+          <h2 className="mb-3 text-xl font-bold text-leaf-dark">إيه الموجود عندك من المشاتل؟</h2>
           <p className="mb-4 text-sm leading-7 text-muted">
             دي المواد الشائعة في السوق المصري. لو مش لاقية بيوميس أو لحاء مستورد، عادي — مش داخلين في الاختيارات.
           </p>
