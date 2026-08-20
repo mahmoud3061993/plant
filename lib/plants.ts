@@ -65,10 +65,7 @@ export function getPlantSummaries(): PlantSummary[] {
   return PLANTS.map(toPlantSummary);
 }
 
-export function searchPlants<T extends PlantSummary>(
-  query: string,
-  plants: T[] = PLANTS as T[],
-): T[] {
+export function searchPlants<T extends PlantSummary>(query: string, plants: T[]): T[] {
   const needle = normalizeSearch(query);
   if (!needle) return plants;
 
