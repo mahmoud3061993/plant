@@ -5,6 +5,7 @@ import { CareSection } from "@/components/care-section";
 import { PlantPortrait } from "@/components/plant-portrait";
 import { PrintCareCard } from "@/components/print-care-card";
 import { QuickCare } from "@/components/quick-care";
+import { getPhotoCredit } from "@/data/photo-credits";
 import { getAllPlants, getPlantBySlug } from "@/lib/plants";
 import {
   DIFFICULTY_LABELS,
@@ -37,6 +38,7 @@ export default async function PlantDetailPage({ params }: PlantPageProps) {
   const { slug } = await params;
   const plant = getPlantBySlug(slug);
   if (!plant) notFound();
+  const photoCredit = getPhotoCredit(plant.slug);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -45,14 +47,21 @@ export default async function PlantDetailPage({ params }: PlantPageProps) {
       </Link>
 
       <div className="mt-5 overflow-hidden rounded-[2rem] border border-line bg-card shadow-[var(--shadow-card)]">
-        <PlantPortrait
-          name={plant.arabicName}
-          hue={plant.visual.hue}
-          leafStyle={plant.visual.leafStyle}
-          emoji={plant.visual.emoji}
-          size="hero"
-        />
+        <PlantPortrait slug={plant.slug} name={plant.arabicName} size="hero" />
         <div className="p-5 sm:p-7">
+          {photoCredit ? (
+            <p className="mb-3 text-xs leading-6 text-muted">
+              صورة: {photoCredit.author} · {photoCredit.license} ·{" "}
+              <a
+                href={photoCredit.sourceUrl}
+                className="underline decoration-line underline-offset-4 hover:text-leaf"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Wikimedia Commons
+              </a>
+            </p>
+          ) : null}
           <p className="text-sm text-muted">{INDOOR_LABELS[plant.indoorOutdoor]}</p>
           <h1 className="mt-1 text-3xl font-bold text-leaf-dark sm:text-4xl">
             {plant.arabicName}
