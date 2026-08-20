@@ -16,7 +16,7 @@ import type {
   Toxicity,
   WaterNeed,
 } from "@/data/types";
-import { mixFromDrainage } from "@/lib/plant-fields";
+import { COMPONENT_LABELS, mixFromDrainage } from "@/lib/plant-fields";
 
 export type CareProfileId =
   | "aroid-easy"
@@ -389,11 +389,11 @@ const PROFILES: Record<CareProfileId, ProfileDefaults> = {
     humidityRisk: "medium",
     transplant: "medium",
     acSensitive: true,
-    soilType: "لحاء سحلبيات",
+    soilType: "خلطة خفيفة للأوركيد من مواد موجودة في مصر",
     mix: [
-      { component: "bark", percent: 70, purpose: "هوا للجذور الهوائية" },
-      { component: "perlite", percent: 20, purpose: "صرف سريع" },
-      { component: "charcoal", percent: 10, purpose: "يحافظ على الخلطة نظيفة" },
+      { component: "perlite", percent: 50, purpose: "هوا للجذور بدل اللحاء المستورد" },
+      { component: "charcoal", percent: 20, purpose: "يفك الخلطة ويقلل العفن" },
+      { component: "peat-moss", percent: 30, purpose: "ندى خفيف من غير طين" },
     ],
     pests: ["mealybugs", "scale", "thrips"],
   },
@@ -522,7 +522,9 @@ export function createPlant(draft: PlantDraft): Plant {
       ? "عادةً غير سام، مع إن المضغ الزائد ممكن يضايق المعدة. الشوك أو التربة مش للأكل."
       : "سام لو اتأكل. خليه بعيد عن الأطفال والحيوانات اللي بتمضغ ورق.");
 
-  const suggestedMix = mix.map((part) => `${part.percent}% ${part.component}`).join(" + ");
+  const suggestedMix = mix
+    .map((part) => `${part.percent}% ${COMPONENT_LABELS[part.component]}`)
+    .join(" + ");
 
   return {
     id: draft.slug,
@@ -562,7 +564,7 @@ export function createPlant(draft: PlantDraft): Plant {
       drainage: profile.drainage,
       moistureRetention: profile.drainage === "sharp" ? "low" : profile.drainage === "moisture-retentive" ? "high" : "medium",
       suggestedMix: `نِسَب تقريبية: ${suggestedMix}. عدّل حسب حجم الأصيص والجو.`,
-      alternatives: ["بدّل البيرلايت برمل خشن أو بوميس لو مش متوفر.", "ما تستخدمش تربة حديقة تقيلة لوحدها."],
+      alternatives: ["بدّل البيرلايت برمل لو مش متوفر.", "ما تستخدميش تربة زراعية تقيلة لوحدها من غير تخفيف."],
       mix,
     },
     fertilizing: {

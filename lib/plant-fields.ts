@@ -17,18 +17,51 @@ import type {
 } from "@/data/types";
 
 export const COMPONENT_LABELS: Record<SoilComponentId, string> = {
-  "potting-mix": "Potting Mix",
+  "potting-mix": "تربة جاهزة للأصص",
   "garden-soil": "تربة زراعية",
+  "peat-moss": "بيتموس",
   perlite: "بيرلايت",
   "coco-peat": "بيت جوز هند",
   "coco-coir": "ألياف جوز هند",
   bark: "لحاء",
-  sand: "رمل خشن",
+  sand: "رمل",
   pumice: "بيوميس",
-  compost: "كمبوست",
+  compost: "كمبوست / سماد عضوي",
   vermiculite: "فيرميكيوليت",
-  charcoal: "فحم زراعي",
+  charcoal: "فحم نباتي",
 };
+
+/** Map imported/specialty ingredients to what Egyptian nurseries actually sell. */
+const EGYPT_SUBSTITUTE: Partial<Record<SoilComponentId, SoilComponentId>> = {
+  bark: "perlite",
+  pumice: "perlite",
+  vermiculite: "peat-moss",
+  "coco-coir": "coco-peat",
+  "potting-mix": "peat-moss",
+};
+
+export function egyptizeMix(parts: SoilMixPart[]): SoilMixPart[] {
+  const merged = new Map<SoilComponentId, SoilMixPart>();
+  for (const part of parts) {
+    const component = EGYPT_SUBSTITUTE[part.component] ?? part.component;
+    const prev = merged.get(component);
+    if (prev) {
+      prev.percent += part.percent;
+    } else {
+      merged.set(component, {
+        component,
+        percent: part.percent,
+        purpose: part.purpose,
+      });
+    }
+  }
+  const list = [...merged.values()];
+  const total = list.reduce((sum, part) => sum + part.percent, 0) || 1;
+  return list.map((part) => ({
+    ...part,
+    percent: Math.round((part.percent / total) * 100),
+  }));
+}
 
 export function preferredLight(plant: Plant): LightLevel {
   return plant.light.preferred ?? plant.light.level;
@@ -69,27 +102,28 @@ export function moistureRetention(plant: Plant): MoistureRetention {
 export function mixFromDrainage(drainage: DrainageNeed): SoilMixPart[] {
   if (drainage === "sharp") {
     return [
-      { component: "potting-mix", percent: 40, purpose: "أساس خفيف فيه غذاء بسيط" },
-      { component: "perlite", percent: 40, purpose: "صرف سريع وهوا للجذور" },
-      { component: "sand", percent: 20, purpose: "يمنع التربة تبقى طينية" },
+      { component: "peat-moss", percent: 30, purpose: "أساس خفيف متوفر في المشاتل" },
+      { component: "sand", percent: 40, purpose: "صرف سريع زي جو مصر الجاف" },
+      { component: "perlite", percent: 30, purpose: "هوا للجذور ومنع الطين" },
     ];
   }
   if (drainage === "moisture-retentive") {
     return [
-      { component: "potting-mix", percent: 50, purpose: "أساس يحتفظ بندى خفيف" },
-      { component: "coco-coir", percent: 30, purpose: "رطوبة منتظمة من غير طين" },
-      { component: "perlite", percent: 20, purpose: "يمنع الغرق رغم الرطوبة" },
+      { component: "peat-moss", percent: 60, purpose: "بيتموس يحتفظ بندى من غير طين ثقيل" },
+      { component: "perlite", percent: 25, purpose: "يمنع الغرق رغم الرطوبة" },
+      { component: "compost", percent: 15, purpose: "سماد عضوي خفيف لو التربة فقيرة" },
     ];
   }
   return [
-    { component: "potting-mix", percent: 50, purpose: "أساس متوازن للأصص" },
-    { component: "perlite", percent: 30, purpose: "صرف وهوا" },
-    { component: "bark", percent: 20, purpose: "خلطة أخشن زي جذور الآرويد" },
+    { component: "peat-moss", percent: 50, purpose: "أساس الأصص في المشاتل المصرية" },
+    { component: "perlite", percent: 25, purpose: "صرف وهوا" },
+    { component: "sand", percent: 15, purpose: "يخفف البيتموس في الحر" },
+    { component: "garden-soil", percent: 10, purpose: "شوية تربة زراعية لو الخلطة خفيفة زيادة" },
   ];
 }
 
 export function plantMix(plant: Plant): SoilMixPart[] {
-  return plant.soil.mix ?? mixFromDrainage(plant.soil.drainage);
+  return egyptizeMix(plant.soil.mix ?? mixFromDrainage(plant.soil.drainage));
 }
 
 export function temperatureRange(plant: Plant): { min: number; max: number } {

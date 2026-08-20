@@ -3,7 +3,7 @@ import { createPlant, type PlantDraft } from "@/data/factory";
 const DRAFTS: PlantDraft[] = [
   {
     slug: "scindapsus-pictus",
-    arabicName: "سيندابسس",
+    arabicName: "البوتس الفضي",
     englishName: "Satin Pothos",
     scientificName: "Scindapsus pictus",
     alsoKnownAs: ["البوتس الفضي", "Satin Pothos"],
@@ -74,7 +74,7 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "tradescantia-zebrina",
-    arabicName: "ترادسكانتيا",
+    arabicName: "اليهودي التائه",
     englishName: "Wandering Dude",
     scientificName: "Tradescantia zebrina",
     alsoKnownAs: ["يهودي تائه", "Zebrina"],
@@ -301,10 +301,10 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "money-tree",
-    arabicName: "بكيرا",
+    arabicName: "شجرة الفلوس",
     englishName: "Money Tree",
     scientificName: "Pachira aquatica",
-    alsoKnownAs: ["شجرة الفلوس", "Pachira"],
+    alsoKnownAs: ["Pachira", "باكيرا"],
     profile: "easy-foliage",
     category: "upright",
     size: "medium",
@@ -497,7 +497,7 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "lucky-bamboo",
-    arabicName: "البامبو المحظوظ",
+    arabicName: "البامبو",
     englishName: "Lucky Bamboo",
     scientificName: "Dracaena sanderiana",
     profile: "easy-foliage",
@@ -933,7 +933,7 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "pelargonium",
-    arabicName: "جارونيا",
+    arabicName: "الجارونيا",
     englishName: "Geranium",
     scientificName: "Pelargonium hortorum",
     alsoKnownAs: ["إبرة الراعي"],
@@ -969,7 +969,7 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "jasminum-sambac",
-    arabicName: "ياسمين بلدي",
+    arabicName: "الفل",
     englishName: "Arabian Jasmine",
     scientificName: "Jasminum sambac",
     profile: "balcony-sun",
@@ -1127,7 +1127,7 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "thaumatophyllum",
-    arabicName: "فيلودندرون سيلوم",
+    arabicName: "السيلوم",
     englishName: "Split-leaf Philodendron",
     scientificName: "Thaumatophyllum bipinnatifidum",
     alsoKnownAs: ["Philodendron selloum"],
@@ -1199,7 +1199,7 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "hibiscus-rosa",
-    arabicName: "كركديه صيني",
+    arabicName: "الهبسكس",
     englishName: "Chinese Hibiscus",
     scientificName: "Hibiscus rosa-sinensis",
     profile: "balcony-sun",
@@ -1332,12 +1332,13 @@ const DRAFTS: PlantDraft[] = [
   },
   {
     slug: "poinsettia",
-    arabicName: "بتوانسيا",
+    arabicName: "بتونسيا",
     englishName: "Poinsettia",
     scientificName: "Euphorbia pulcherrima",
     profile: "flowering-easy",
     size: "small",
     shortDescription: "نبات موسمي أحمر. ضوء ساطع وري بعد جفاف خفيف، بعيد عن تيار باب. العصارة مهيجة.",
+    alsoKnownAs: ["بنت القنصل", "بتوانسيا"],
     emoji: "⭐",
     hue: 2,
     petFriendly: false,

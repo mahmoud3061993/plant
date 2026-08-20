@@ -13,8 +13,8 @@ export default function PlantsPage() {
       <p className="text-sm font-bold text-leaf">دليل النباتات</p>
       <h1 className="mt-2 text-3xl font-bold text-leaf-dark sm:text-4xl">اعرف نباتك كويس</h1>
       <p className="mt-3 max-w-2xl text-base leading-8 text-muted">
-        دور بالاسم العربي أو الإنجليزي. الفلتر بسيط وبيشتغل على بيانات حقيقية للنبات،
-        مش على شكل الكرت بس.
+        الأنواع دي شائعة في المشاتل والبيوت في مصر. دور بالاسم العربي أو الإنجليزي،
+        والصورة على الكرت صورة حقيقية عشان تعرفي شكل النبات.
       </p>
       <div className="mt-8">
         <PlantLibrary plants={getPlantSummaries()} />

@@ -53,7 +53,8 @@ export type SoilComponentId =
   | "pumice"
   | "compost"
   | "vermiculite"
-  | "charcoal";
+  | "charcoal"
+  | "peat-moss";
 
 export type DiagnosticCauseId =
   | "overwatering"

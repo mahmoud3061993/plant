@@ -1,22 +1,20 @@
 import type { Plant, SoilComponentId } from "@/data/types";
 import { COMPONENT_LABELS, plantMix } from "@/lib/plant-fields";
 
+/** Materials actually sold in Egyptian nurseries and garden shops. */
 export const ALL_COMPONENTS: SoilComponentId[] = [
+  "peat-moss",
   "potting-mix",
   "garden-soil",
   "perlite",
-  "pumice",
-  "bark",
-  "coco-coir",
-  "coco-peat",
   "sand",
   "compost",
+  "coco-peat",
   "charcoal",
-  "vermiculite",
 ];
 
-const DRAINAGE: SoilComponentId[] = ["perlite", "pumice", "bark", "sand", "charcoal"];
-const BASE: SoilComponentId[] = ["potting-mix", "coco-coir", "coco-peat", "vermiculite"];
+const DRAINAGE: SoilComponentId[] = ["perlite", "sand", "charcoal"];
+const BASE: SoilComponentId[] = ["peat-moss", "potting-mix", "coco-peat"];
 const HEAVY: SoilComponentId[] = ["garden-soil", "compost"];
 
 export function recommendedMix(plant: Plant) {
@@ -49,7 +47,7 @@ export function mixFromAvailable(plant: Plant, available: SoilComponentId[]) {
     return true;
   };
 
-  const recBase = rec.find((p) => BASE.includes(p.component) || p.component === "potting-mix");
+  const recBase = rec.find((p) => BASE.includes(p.component) || p.component === "peat-moss");
   const recDrain = rec.filter((p) => DRAINAGE.includes(p.component));
   const recOrg = rec.find((p) => p.component === "compost");
 
@@ -57,52 +55,47 @@ export function mixFromAvailable(plant: Plant, available: SoilComponentId[]) {
     const ok = take(
       have.has(recBase.component)
         ? [recBase.component]
-        : ["potting-mix", "coco-coir", "coco-peat", "vermiculite"],
+        : ["peat-moss", "potting-mix", "coco-peat"],
       Math.min(recBase.percent, 55),
       recBase.purpose,
     );
     if (!ok && have.has("garden-soil") && !drainNeed) {
-      take(["garden-soil"], 40, "أثقل من المثالي — خفّفها بمادة تصريف.");
-      warnings.push("التربة الزراعية أثقل من potting mix. استخدمها بحذر.");
+      take(["garden-soil"], 40, "أثقل من البيتموس — خفّفها برمل أو بيرلايت.");
+      warnings.push("التربة الزراعية في مصر غالبًا تقيلة. خفّفيها قبل ما تحطي نبات أصص.");
     }
   }
 
   const drainPct = recDrain.reduce((s, p) => s + p.percent, 0) || (drainNeed ? 45 : 25);
   const drainOk = take(
-    recDrain.map((p) => p.component).concat(["perlite", "pumice", "bark", "sand"]),
+    recDrain.map((p) => p.component).concat(["perlite", "sand", "charcoal"]),
     Math.min(drainPct, remaining - 10),
   );
   if (!drainOk && drainNeed) {
     return {
       ok: false as const,
       message:
-        "المواد اللي عندك مش كافية لنبات محتاج تصريف سريع. لازم على الأقل بيرلايت أو بيوميس أو رمل خشن أو لحاء.",
+        "النبات ده محتاج تصريف سريع. من غير بيرلايت أو رمل الخلطة هتتعجن، خصوصًا مع تربة زراعية.",
       parts: [],
       warnings,
     };
   }
 
   if (recOrg && remaining > 10) {
-    take(["compost"], Math.min(10, remaining), "نسبة صغيرة بس.");
+    take(["compost"], Math.min(10, remaining), "نسبة صغيرة من السماد العضوي.");
   }
 
-  if (remaining > 0 && have.has("potting-mix")) take(["potting-mix"], remaining);
-  else if (remaining > 0 && have.has("coco-coir")) take(["coco-coir"], remaining);
+  if (remaining > 0 && have.has("peat-moss")) take(["peat-moss"], remaining);
+  else if (remaining > 0 && have.has("potting-mix")) take(["potting-mix"], remaining);
+  else if (remaining > 0 && have.has("coco-peat")) take(["coco-peat"], remaining);
   else if (remaining > 5) {
     const last = mapped[0];
     if (last) last.percent += remaining;
   }
 
-  if (
-    have.has("garden-soil") &&
-    drainNeed &&
-    !have.has("perlite") &&
-    !have.has("pumice") &&
-    !have.has("sand")
-  ) {
+  if (have.has("garden-soil") && drainNeed && !have.has("perlite") && !have.has("sand")) {
     return {
       ok: false as const,
-      message: "تربة زراعية لوحدها لنبات عصاري أو صبار خطر عفن. ضيف مادة تصريف.",
+      message: "تربة زراعية لوحدها للصبار أو العصاريات خطر عفن. لازم رمل أو بيرلايت.",
       parts: [],
       warnings,
     };
@@ -111,7 +104,7 @@ export function mixFromAvailable(plant: Plant, available: SoilComponentId[]) {
   if (mapped.length === 0) {
     return {
       ok: false as const,
-      message: "المواد المختارة مش كفاية لعمل خلطة مفيدة. اختار أساس خفيف ومادة تصريف.",
+      message: "المواد المختارة مش كفاية. اختاري بيتموس أو تربة جاهزة، ويفضّل بيرلايت أو رمل.",
       parts: [],
       warnings,
     };
@@ -125,13 +118,13 @@ export function mixFromAvailable(plant: Plant, available: SoilComponentId[]) {
   }));
 
   if (parts.some((p) => HEAVY.includes(p.component)) && drainNeed) {
-    warnings.push("قلّل التربة الثقيلة لو قدرت، وزوّد التصريف.");
+    warnings.push("قلّلي التربة الزراعية وزوّدي الرمل أو البيرلايت.");
   }
 
   return {
     ok: true as const,
     parts,
     warnings,
-    message: "دي أقرب خلطة آمنة من اللي عندك — مش بديل مثالي ١٠٠٪.",
+    message: "الخلطة دي من مواد بتتجاب من المشاتل في مصر — مش مكونات مستوردة صعبة.",
   };
 }

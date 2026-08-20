@@ -8,7 +8,7 @@ export const CORE_PLANTS: Plant[] = [
     arabicName: "البوتس",
     englishName: "Pothos",
     scientificName: "Epipremnum aureum",
-    alsoKnownAs: ["المالتيه", "البوتوس", "Devil's Ivy", "Golden Pothos"],
+    alsoKnownAs: ["مالتي بارا", "المالتيه", "البوتوس", "Devil's Ivy", "Golden Pothos"],
     category: "trailing",
     difficulty: "beginner",
     indoorOutdoor: "indoor",
