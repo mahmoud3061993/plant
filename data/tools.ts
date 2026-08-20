@@ -1,29 +1,14 @@
 import type { CareTool } from "./types";
 
-/**
- * Tool registry for the product shell.
- *
- * Phase 1 implements the plant library only. Later engines (Plant Doctor,
- * Matcher, Watering Checker, Soil Mixer, Location Checker, Pest Identifier,
- * Emergency Rescue, Quick Care Card) MUST read from `@/lib/plants` instead of
- * duplicating plant facts.
- */
 export const CARE_TOOLS: CareTool[] = [
   {
     id: "doctor",
-    href: "/tools/doctor",
+    href: "/doctor",
     emoji: "🩺",
     title: "زرعتي فيها مشكلة",
     description: "ساعدني أعرف السبب وإيه اللي أعمله",
-    status: "coming-soon",
-    consumes: [
-      "problems.commonProblems",
-      "problems.rootRotSigns",
-      "watering.overwateringSigns",
-      "watering.underwateringSigns",
-      "dangerSigns",
-      "light.level",
-    ],
+    status: "ready",
+    consumes: ["problems", "watering", "light", "diagnostics"],
   },
   {
     id: "library",
@@ -36,76 +21,84 @@ export const CARE_TOOLS: CareTool[] = [
   },
   {
     id: "matcher",
-    href: "/tools/matcher",
+    href: "/plant-matcher",
     emoji: "🏡",
     title: "إيه النبات المناسب عندي؟",
     description: "اختار نبات يناسب المكان وطريقة حياتك",
-    status: "coming-soon",
-    consumes: [
-      "matcher",
-      "light.level",
-      "environment.humidity",
-      "difficulty",
-      "indoorOutdoor",
-      "safety",
-    ],
+    status: "ready",
+    consumes: ["matcher", "light", "safety", "location"],
   },
   {
     id: "watering",
-    href: "/tools/watering",
+    href: "/watering-checker",
     emoji: "💧",
     title: "أسقي دلوقتي ولا لأ؟",
     description: "اعرف هل نباتك محتاج مياه فعلًا",
-    status: "coming-soon",
-    consumes: [
-      "watering.need",
-      "watering.howToCheck",
-      "watering.droughtTolerance",
-      "watering.summerNotes",
-      "watering.winterNotes",
-    ],
+    status: "ready",
+    consumes: ["watering"],
   },
   {
     id: "soil",
-    href: "/tools/soil",
-    emoji: "🪴",
+    href: "/soil-mixer",
+    emoji: "soil",
     title: "خلطة التربة",
     description: "اعرف أفضل تربة لنباتك",
-    status: "coming-soon",
-    consumes: ["soil.type", "soil.drainage", "soil.suggestedMix", "soil.alternatives"],
+    status: "ready",
+    consumes: ["soil"],
   },
   {
     id: "rescue",
-    href: "/tools/rescue",
+    href: "/emergency",
     emoji: "🚑",
     title: "أنقذ زرعتي",
     description: "خطوات سريعة لو حالة النبات بتسوء",
-    status: "coming-soon",
-    consumes: ["dangerSigns", "problems.rootRotSigns", "commonMistakes"],
+    status: "ready",
+    consumes: ["dangerSigns", "problems"],
   },
   {
     id: "pests",
-    href: "/tools/pests",
+    href: "/pest-identifier",
     emoji: "🐛",
     title: "إيه الحشرة دي؟",
     description: "حدد الآفة واعرف تتعامل معاها إزاي",
-    status: "coming-soon",
+    status: "ready",
     consumes: ["problems.commonPests"],
   },
   {
     id: "location",
-    href: "/tools/location",
+    href: "/location-checker",
     emoji: "📍",
     title: "أحط النبات فين؟",
     description: "اختار أفضل مكان للنبات في البيت",
-    status: "coming-soon",
-    consumes: [
-      "light.bestPlacement",
-      "light.directSunTolerance",
-      "environment.temperature",
-      "environment.humidity",
-      "environment.ventilation",
-    ],
+    status: "ready",
+    consumes: ["light", "environment", "location"],
+  },
+  {
+    id: "care-cards",
+    href: "/care-cards",
+    emoji: "🃏",
+    title: "بطاقة العناية",
+    description: "اطبع صفحة عناية واحدة لنباتك",
+    status: "ready",
+    consumes: ["quickCard"],
+  },
+  {
+    id: "planner",
+    href: "/planner",
+    emoji: "📋",
+    title: "مخطط العناية",
+    description: "صفحات للطباعة تسجّل فيها حالة كل نبات",
+    status: "ready",
+    consumes: [],
+  },
+  {
+    id: "situations",
+    href: "/situations",
+    emoji: "❓",
+    title: "حصل إيه لزرعتي؟",
+    description: "مواقف شائعة وإيه الطبيعي فيها",
+    status: "ready",
+    consumes: [],
   },
 ];
 
@@ -113,4 +106,6 @@ export function getToolById(id: string) {
   return CARE_TOOLS.find((tool) => tool.id === id);
 }
 
-export const COMING_SOON_TOOLS = CARE_TOOLS.filter((tool) => tool.status === "coming-soon");
+export const HOME_TOOLS = CARE_TOOLS.filter((tool) =>
+  ["doctor", "library", "matcher", "watering", "soil", "rescue", "pests", "location"].includes(tool.id),
+);

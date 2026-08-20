@@ -55,30 +55,36 @@ body {
 }
 
 @media print {
-  body * {
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page {
+    break-after: page;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  body.print-care-only * {
     visibility: hidden !important;
   }
 
-  .print-care-card,
-  .print-care-card * {
+  body.print-care-only .print-care-card,
+  body.print-care-only .print-care-card * {
     visibility: visible !important;
   }
 
-  .print-care-card {
+  body.print-care-only .print-care-card {
     position: absolute !important;
     inset: 0 !important;
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
     box-shadow: none !important;
-    border: 1px solid #c8c8c8 !important;
+    border: 1px solid #444 !important;
     background: white !important;
-    break-inside: avoid;
-  }
-
-  header,
-  footer,
-  nav {
-    display: none !important;
   }
 }

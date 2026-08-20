@@ -47,7 +47,13 @@ export default async function PlantDetailPage({ params }: PlantPageProps) {
       </Link>
 
       <div className="mt-5 overflow-hidden rounded-[2rem] border border-line bg-card shadow-[var(--shadow-card)]">
-        <PlantPortrait slug={plant.slug} name={plant.arabicName} size="hero" />
+        <PlantPortrait
+          slug={plant.slug}
+          name={plant.arabicName}
+          size="hero"
+          emoji={plant.visual.emoji}
+          hue={plant.visual.hue}
+        />
         <div className="p-5 sm:p-7">
           {photoCredit ? (
             <p className="mb-3 text-xs leading-6 text-muted">

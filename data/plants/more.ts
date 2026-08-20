@@ -635,7 +635,7 @@ export const MORE_PLANTS: Plant[] = [
     indoorOutdoor: "indoor",
     shortDescription:
       "ورق كبير منقش، وشكلها فخم. سامة بوضوح لو اتمضغت، فمكانها لازم يكون بعيد عن الأطفال والحيوانات.",
-    visual: { emoji: "🪴", hue: 64, leafStyle: "oval" },
+    visual: { emoji: "🌿", hue: 64, leafStyle: "oval" },
     light: {
       level: "medium",
       directSunTolerance: false,

@@ -4,6 +4,7 @@ import type {
   HumidityNeed,
   IndoorOutdoor,
   LightLevel,
+  RoomId,
   Toxicity,
   WaterNeed,
 } from "@/data/types";
@@ -55,4 +56,14 @@ export const TOXICITY_SHORT: Record<Toxicity, string> = {
   safe: "آمن نسبيًا",
   "mildly-toxic": "غير مناسب للأكل",
   toxic: "يبعد عن الأطفال والحيوانات",
+};
+
+export const ROOM_LABELS: Record<RoomId, string> = {
+  bedroom: "غرفة نوم",
+  livingRoom: "صالون",
+  bathroom: "حمام",
+  kitchen: "مطبخ",
+  office: "مكتب",
+  balcony: "بلكونة",
+  outdoor: "مساحة خارجية",
 };

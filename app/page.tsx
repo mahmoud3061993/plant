@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { PlantCard } from "@/components/plant-card";
 import { ToolCard } from "@/components/tool-card";
-import { CARE_TOOLS } from "@/data/tools";
+import { ToolIcon } from "@/components/tool-icon";
+import { HOME_TOOLS } from "@/data/tools";
 import { getBeginnerPlants, toPlantSummary } from "@/lib/plants";
 
 export default function HomePage() {
@@ -35,15 +36,26 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mt-14" aria-labelledby="start-heading">
+        <h2 id="start-heading" className="text-2xl font-bold text-leaf-dark">
+          مش عارف تبدأ منين؟
+        </h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          <StartCard href="/plants" id="library" title="عندي نبات وعايز أعرف أعتني بيه" />
+          <StartCard href="/doctor" id="doctor" title="نباتي فيه مشكلة" />
+          <StartCard href="/plant-matcher" id="matcher" title="لسه هشتري نبات" />
+        </div>
+      </section>
+
       <section className="mt-14" aria-labelledby="tools-heading">
         <h2 id="tools-heading" className="text-2xl font-bold text-leaf-dark">
           اختار اللي محتاجه دلوقتي
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-7 text-muted">
-          الأدوات اللي مكتوب عليها «قريبًا» ظاهرة عشان تعرف المنتج رايح فين، من غير ما نعمل وظائف وهمية.
+          كل الأدوات بتقرأ من نفس دليل النباتات.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {CARE_TOOLS.map((tool) => (
+          {HOME_TOOLS.map((tool) => (
             <ToolCard key={tool.id} tool={tool} />
           ))}
         </div>
@@ -70,5 +82,27 @@ export default function HomePage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function StartCard({
+  href,
+  id,
+  title,
+}: {
+  href: string;
+  id: "library" | "doctor" | "matcher";
+  title: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-28 items-center gap-4 rounded-[1.75rem] border border-line bg-card p-5 shadow-[var(--shadow-card)] hover:border-leaf/30"
+    >
+      <span className="grid size-14 place-items-center rounded-2xl bg-leaf-soft">
+        <ToolIcon id={id} className="size-8" />
+      </span>
+      <span className="text-lg font-bold leading-8 text-leaf-dark">{title}</span>
+    </Link>
   );
 }

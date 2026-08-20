@@ -102,6 +102,22 @@ export const PESTS = {
     ],
     notes: "صعب يتشاف بالعين في البداية. لو شكيت، افحص الورق الجديدة كويس.",
   },
+  whiteflies: {
+    id: "whiteflies",
+    arabicName: "الذبابة البيضاء",
+    englishName: "Whiteflies",
+    signs: [
+      "حشرات بيضا صغيرة تطير لما تهز الورق",
+      "مادة لزجة",
+      "ورق باهت من تحت",
+    ],
+    nonChemicalTreatment: [
+      "اعزل النبات",
+      "اغسل تحت الورق بمياه فاتر",
+      "كرر الغسيل لأن البيض بيفقس على دفعات",
+    ],
+    notes: "شائعة أكتر على النباتات في البلكونة أو جنب شباك مفتوح.",
+  },
 } satisfies Record<string, PestInfo>;
 
 export function pest(

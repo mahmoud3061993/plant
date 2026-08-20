@@ -5,7 +5,7 @@ export function QuickCare({ plant }: { plant: Plant }) {
   const items = [
     { emoji: "☀️", title: "الضوء", body: LIGHT_LABELS[plant.light.level] },
     { emoji: "💧", title: "الري", body: plant.quickCard.water },
-    { emoji: "🪴", title: "التربة", body: plant.quickCard.soil },
+    { emoji: "●", title: "التربة", body: plant.quickCard.soil },
     { emoji: "🌿", title: "التسميد", body: plant.fertilizing.season },
     { emoji: "💦", title: "الرطوبة", body: HUMIDITY_LABELS[plant.environment.humidity] },
     { emoji: "🌡", title: "الحرارة", body: plant.quickCard.temperature },

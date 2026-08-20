@@ -28,6 +28,82 @@ export type PlantCategory =
   | "flowering"
   | "foliage";
 
+export type DirectSunHours = "none" | "morning" | "few" | "full";
+export type SoilMoisture = "dry" | "mostly-dry" | "evenly-moist" | "never-soggy";
+export type MoistureRetention = "low" | "medium" | "high";
+export type RoomSuitability = "excellent" | "good" | "possible" | "poor";
+export type MatureSize = "small" | "medium" | "large";
+export type RiskLevel = "low" | "medium" | "high";
+export type StyleTag =
+  | "foliage"
+  | "hanging"
+  | "flowering"
+  | "succulent"
+  | "cactus"
+  | "statement";
+
+export type SoilComponentId =
+  | "potting-mix"
+  | "garden-soil"
+  | "perlite"
+  | "coco-peat"
+  | "coco-coir"
+  | "bark"
+  | "sand"
+  | "pumice"
+  | "compost"
+  | "vermiculite"
+  | "charcoal";
+
+export type DiagnosticCauseId =
+  | "overwatering"
+  | "underwatering"
+  | "root-rot"
+  | "too-much-sun"
+  | "insufficient-light"
+  | "low-humidity"
+  | "temperature-stress"
+  | "ac-draft"
+  | "fertilizer-burn"
+  | "nutrient-deficiency"
+  | "transplant-shock"
+  | "pests"
+  | "poor-drainage"
+  | "natural-aging"
+  | "root-bound";
+
+export type SymptomId =
+  | "yellow-leaves"
+  | "wilting"
+  | "leaf-drop"
+  | "brown-tips"
+  | "spots"
+  | "stunted"
+  | "curling"
+  | "pests"
+  | "rot-smell"
+  | "mushy-stem"
+  | "root-problem"
+  | "unsure";
+
+export interface SoilMixPart {
+  component: SoilComponentId;
+  percent: number;
+  purpose: string;
+}
+
+export interface RoomPlacement {
+  bedroom: RoomSuitability;
+  livingRoom: RoomSuitability;
+  bathroom: RoomSuitability;
+  kitchen: RoomSuitability;
+  office: RoomSuitability;
+  balcony: RoomSuitability;
+  outdoor: RoomSuitability;
+}
+
+export type RoomId = keyof RoomPlacement;
+
 export type ToolStatus = "ready" | "coming-soon";
 
 export type CareToolId =
@@ -38,7 +114,10 @@ export type CareToolId =
   | "soil"
   | "rescue"
   | "pests"
-  | "location";
+  | "location"
+  | "planner"
+  | "situations"
+  | "care-cards";
 
 export interface CareTool {
   id: CareToolId;
@@ -92,7 +171,10 @@ export interface Plant {
   };
   light: {
     level: LightLevel;
+    minimum?: LightLevel;
+    preferred?: LightLevel;
     directSunTolerance: boolean;
+    directSunHours?: DirectSunHours;
     explanation: string;
     bestPlacement: string;
   };
@@ -105,12 +187,16 @@ export interface Plant {
     summerNotes: string;
     winterNotes: string;
     droughtTolerance: DroughtTolerance;
+    soilMoisture?: SoilMoisture;
+    checkDepthCm?: [number, number];
   };
   soil: {
     type: string;
     drainage: DrainageNeed;
     suggestedMix: string;
     alternatives: string[];
+    moistureRetention?: MoistureRetention;
+    mix?: SoilMixPart[];
   };
   fertilizing: {
     frequency: string;
@@ -122,6 +208,10 @@ export interface Plant {
     humidity: HumidityNeed;
     humidityNotes: string;
     ventilation: string;
+    temperatureMinC?: number;
+    temperatureMaxC?: number;
+    acSensitive?: boolean;
+    airflowSensitive?: boolean;
   };
   care: {
     pruning: string;
@@ -155,6 +245,18 @@ export interface Plant {
     petFriendly: boolean;
     beginnerFriendly: boolean;
     compact: boolean;
+    neglectTolerant?: boolean;
+    frequentCare?: boolean;
+    hanging?: boolean;
+    matureSize?: MatureSize;
+    styleTags?: StyleTag[];
+  };
+  location?: RoomPlacement;
+  diagnostics?: {
+    rootRotRisk: RiskLevel;
+    sunburnRisk: RiskLevel;
+    lowHumidityRisk: RiskLevel;
+    transplantShockRisk: RiskLevel;
   };
 }
 

@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "الرئيسية" },
   { href: "/plants", label: "دليل النباتات" },
   { href: "/tools", label: "أدوات العناية" },
+  { href: "/search", label: "بحث" },
 ];
 
 export function SiteHeader() {
@@ -51,6 +52,17 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          <form action="/search" className="ms-2">
+            <label htmlFor="header-search" className="sr-only">
+              بحث
+            </label>
+            <input
+              id="header-search"
+              name="q"
+              placeholder="بحث..."
+              className="min-h-11 w-36 rounded-full border border-line bg-card px-4 text-sm outline-none ring-leaf/30 placeholder:text-muted focus:w-48 focus:ring-2"
+            />
+          </form>
         </nav>
 
         <button
@@ -72,6 +84,17 @@ export function SiteHeader() {
           aria-label="قائمة الجوال"
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-2">
+            <form action="/search">
+              <label htmlFor="mobile-search" className="sr-only">
+                بحث
+              </label>
+              <input
+                id="mobile-search"
+                name="q"
+                placeholder="دور على نبات أو مشكلة..."
+                className="min-h-12 w-full rounded-2xl border border-line bg-background px-4 text-base"
+              />
+            </form>
             {LINKS.map((link) => (
               <Link
                 key={link.href}

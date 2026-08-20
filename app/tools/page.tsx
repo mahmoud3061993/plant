@@ -15,7 +15,7 @@ export default function ToolsPage() {
         أدوات هتساعدك تقرر أسرع
       </h1>
       <p className="mt-3 max-w-2xl text-base leading-8 text-muted">
-        دليل النباتات جاهز دلوقتي. باقي الأدوات ظاهرة كمكانها في المنتج، وهتستخدم نفس قاعدة النباتات لما تتعمل.
+        كل أداة بتستخدم نفس قاعدة النباتات. اختار اللي محتاجه دلوقتي من غير حسابات ولا تسجيل.
       </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {CARE_TOOLS.map((tool) => (

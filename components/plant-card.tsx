@@ -9,7 +9,12 @@ export function PlantCard({ plant }: { plant: PlantSummary }) {
       href={`/plants/${plant.slug}`}
       className="group flex flex-col overflow-hidden rounded-[1.75rem] border border-line bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:border-leaf/30"
     >
-      <PlantPortrait slug={plant.slug} name={plant.arabicName} />
+      <PlantPortrait
+        slug={plant.slug}
+        name={plant.arabicName}
+        emoji={plant.visual.emoji}
+        hue={plant.visual.hue}
+      />
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
           <h2 className="text-lg font-bold text-leaf-dark">{plant.arabicName}</h2>

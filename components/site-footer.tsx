@@ -16,6 +16,15 @@ export function SiteFooter() {
           <Link href="/plants" className="font-semibold text-leaf hover:underline">
             دليل النباتات
           </Link>
+          <Link href="/doctor" className="font-semibold text-leaf hover:underline">
+            التشخيص
+          </Link>
+          <Link href="/planner" className="font-semibold text-leaf hover:underline">
+            المخطط للطباعة
+          </Link>
+          <Link href="/situations" className="font-semibold text-leaf hover:underline">
+            حصل إيه لزرعتي؟
+          </Link>
           <Link href="/tools" className="font-semibold text-leaf hover:underline">
             أدوات العناية
           </Link>
